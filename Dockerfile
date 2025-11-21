@@ -1,5 +1,5 @@
 # clean base image containing only comfyui, comfy-cli and comfyui-manager
-FROM runpod/worker-comfyui:5.5.0-base
+FROM runpod/worker-comfyui:5.5.1-base
 
 # install custom nodes into comfyui
 RUN comfy node install --exit-on-fail comfyui_essentials
