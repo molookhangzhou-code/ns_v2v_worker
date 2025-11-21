@@ -1,10 +1,6 @@
 FROM runpod/worker-comfyui:5.5.1-base
 
-# 调整 handler 配置
-RUN sed -i \
-    -e 's/^COMFY_API_AVAILABLE_INTERVAL_MS = [0-9]\+/COMFY_API_AVAILABLE_INTERVAL_MS = 500/' \
-    -e 's/^COMFY_API_AVAILABLE_MAX_RETRIES = [0-9]\+/COMFY_API_AVAILABLE_MAX_RETRIES = 2000/' \
-    /handler.py
+
 
 # install custom nodes into comfyui
 RUN comfy-node-install comfyui_essentials
