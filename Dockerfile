@@ -32,3 +32,16 @@ RUN comfy model download --url https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_
 
 # copy all input data (like images or videos) into comfyui (uncomment and adjust if needed)
 # COPY input/ /comfyui/input/
+RUN comfy-node-install https://github.com/kijai/ComfyUI-KJNodes
+RUN comfy-node-install https://github.com/1038lab/ComfyUI-RMBG
+RUN comfy-node-install https://github.com/yolain/ComfyUI-Easy-Use
+RUN comfy-node-install https://github.com/kijai/ComfyUI-GIMM-VFI
+RUN comfy-node-install https://github.com/Stability-AI/stability-ComfyUI-nodes
+RUN comfy-node-install https://github.com/WASasquatch/was-node-suite-comfyui
+RUN comfy-node-install https://github.com/cubiq/ComfyUI_essentials
+RUN comfy-node-install https://github.com/chflame163/ComfyUI_LayerStyle
+RUN comfy-node-install https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
+RUN comfy-node-install https://github.com/kijai/ComfyUI-WanVideoWrapper
+RUN comfy-node-install https://github.com/kijai/ComfyUI-WanAnimatePreprocess
+RUN comfy-node-install https://github.com/filliptm/ComfyUI_Fill-Nodes
+RUN comfy-node-install https://github.com/9nate-drake/Comfyui-SecNodes
