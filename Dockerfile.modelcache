@@ -1,0 +1,57 @@
+FROM runpod/worker-comfyui:5.5.1-base
+
+# 调整 handler 配置
+RUN sed -i \
+    -e 's/^COMFY_API_AVAILABLE_INTERVAL_MS = [0-9]\+/COMFY_API_AVAILABLE_INTERVAL_MS = 500/' \
+    -e 's/^COMFY_API_AVAILABLE_MAX_RETRIES = [0-9]\+/COMFY_API_AVAILABLE_MAX_RETRIES = 2000/' \
+    /handler.py
+
+# 固定时区，避免 tzdata 交互
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=Etc/UTC \
+    TRITON_CACHE_DIR=/opt/triton-cache \
+    TORCHINDUCTOR_CACHE_DIR=/opt/inductor-cache
+
+# install custom nodes into comfyui
+RUN comfy-node-install comfyui_essentials
+
+# ========================================
+# 不再在Dockerfile中下载模型！
+# 模型将通过runpod的cached models功能加载
+# ========================================
+
+# copy all input data (like images or videos) into comfyui (uncomment and adjust if needed)
+# COPY input/ /comfyui/input/
+RUN comfy-node-install https://github.com/kijai/ComfyUI-KJNodes
+RUN comfy-node-install https://github.com/1038lab/ComfyUI-RMBG
+RUN comfy-node-install https://github.com/yolain/ComfyUI-Easy-Use
+RUN comfy-node-install https://github.com/kijai/ComfyUI-GIMM-VFI
+RUN comfy-node-install https://github.com/Stability-AI/stability-ComfyUI-nodes
+RUN comfy-node-install https://github.com/WASasquatch/was-node-suite-comfyui
+RUN comfy-node-install https://github.com/cubiq/ComfyUI_essentials
+RUN comfy-node-install https://github.com/chflame163/ComfyUI_LayerStyle
+RUN comfy-node-install https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
+RUN comfy-node-install https://github.com/kijai/ComfyUI-WanVideoWrapper
+RUN comfy-node-install https://github.com/kijai/ComfyUI-WanAnimatePreprocess
+RUN comfy-node-install https://github.com/filliptm/ComfyUI_Fill-Nodes
+RUN comfy-node-install https://github.com/9nate-drake/Comfyui-SecNodes
+
+# 修改 handler.py 以支持 video 通过 URL 上传
+COPY modify_handler.py /tmp/modify_handler.py
+RUN python3 /tmp/modify_handler.py && rm /tmp/modify_handler.py
+
+# ========================================
+# 创建启动脚本：在容器启动时创建符号链接
+# 从 /runpod-volume/huggingface-cache/hub/ 链接到 /comfyui/models/
+# ========================================
+COPY setup_model_links.sh /setup_model_links.sh
+RUN chmod +x /setup_model_links.sh
+
+# 修改入口点，先执行符号链接脚本
+# 注意：runpod/worker-comfyui 的默认入口点是 /start.sh
+# 我们需要在启动前执行我们的脚本
+RUN mv /start.sh /start_original.sh && \
+    echo '#!/bin/bash' > /start.sh && \
+    echo '/setup_model_links.sh' >> /start.sh && \
+    echo 'exec /start_original.sh' >> /start.sh && \
+    chmod +x /start.sh

@@ -1,0 +1,30 @@
+{
+  "input": {
+    "workflow": {
+      "1": {
+        "inputs": {
+          "video": "input_video.mp4",
+          "force_rate": 0,
+          "force_size": "Disabled",
+          "custom_width": 512,
+          "custom_height": 512,
+          "frame_load_cap": 0,
+          "skip_first_frames": 0,
+          "select_every_nth": 1
+        },
+        "class_type": "VHS_LoadVideo"
+      },
+      "2": {
+        "inputs": {
+          "frame_rate": 8,
+          "loop_count": 0,
+          "filename_prefix": "output",
+          "format": "video/h264-mp4",
+          "save_output": true,
+          "images": ["1", 0]
+        },
+        "class_type": "VHS_SaveVideo"
+      }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+usage: test_video_upload.py [-h] [--workflow WORKFLOW] [--video-url VIDEO_URL]
+                            [--video-base64 VIDEO_BASE64]
+                            [--video-name VIDEO_NAME] [--image-url IMAGE_URL]
+                            [--image-name IMAGE_NAME] [--endpoint ENDPOINT]
+                            [--api-key API_KEY] [--timeout TIMEOUT]
+                            [--output OUTPUT] [--dry-run]
+test_video_upload.py: error: unrecognized arguments:         
