@@ -1,4 +1,4 @@
-FROM runpod/worker-comfyui:5.5.1-base
+FROM runpod/worker-comfyui:5.6.0-base
 
 # 调整 handler 配置
 RUN sed -i \
