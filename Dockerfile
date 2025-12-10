@@ -32,31 +32,22 @@ RUN comfy-node-install https://github.com/9nate-drake/Comfyui-SecNodes
 COPY modify_handler.py /tmp/modify_handler.py
 RUN python3 /tmp/modify_handler.py && rm /tmp/modify_handler.py
 
-# 打包时先删掉 models 目录，启动时再链接到 HuggingFace 缓存
-RUN rm -rf /comfyui/models
-
-# 启动脚本 - 直接把整个 models 目录指向 HuggingFace 缓存
+# 启动脚本 - 链接 HuggingFace 缓存中的模型目录
 RUN echo '#!/bin/bash\n\
 CACHE_HUB="/runpod-volume/huggingface-cache/hub"\n\
-echo "=== Scanning HuggingFace cache ==="\n\
-ls -la "${CACHE_HUB}" 2>/dev/null || echo "Cache hub not found"\n\
 CACHE_BASE=$(find "${CACHE_HUB}" -maxdepth 1 -type d -name "models--*" 2>/dev/null | head -n 1)\n\
 if [ -n "${CACHE_BASE}" ]; then\n\
-    echo "Found cache base: ${CACHE_BASE}"\n\
     SNAPSHOT_DIR=$(find "${CACHE_BASE}/snapshots" -maxdepth 1 -type d ! -name snapshots 2>/dev/null | head -n 1)\n\
     if [ -n "${SNAPSHOT_DIR}" ]; then\n\
-        rm -rf /comfyui/models\n\
-        ln -sf "${SNAPSHOT_DIR}" /comfyui/models\n\
-        echo "Linked /comfyui/models -> ${SNAPSHOT_DIR}"\n\
-        echo "=== Models directory contents ==="\n\
-        ls -la "${SNAPSHOT_DIR}"\n\
-        echo "=== clip_vision contents ==="\n\
-        ls -la "${SNAPSHOT_DIR}/clip_vision" 2>/dev/null || echo "clip_vision not found"\n\
-    else\n\
-        echo "ERROR: No snapshot directory found"\n\
+        echo "Found models at: ${SNAPSHOT_DIR}"\n\
+        for dir in clip clip_vision detection diffusion_models loras sams text_encoders ultralytics vae; do\n\
+            if [ -d "${SNAPSHOT_DIR}/${dir}" ]; then\n\
+                rm -rf "/comfyui/models/${dir}"\n\
+                ln -sf "${SNAPSHOT_DIR}/${dir}" "/comfyui/models/${dir}"\n\
+                echo "Linked: ${dir}"\n\
+            fi\n\
+        done\n\
     fi\n\
-else\n\
-    echo "ERROR: No models--* directory found in cache"\n\
 fi\n\
 exec "$@"\n\
 ' > /start.sh && chmod +x /start.sh
