@@ -14,24 +14,6 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 # install custom nodes into comfyui
 RUN comfy-node-install comfyui_essentials
-
-# download models into comfyui
-RUN comfy model download --url https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors --relative-path models/vae --filename wan_2.1_vae.safetensors
-RUN comfy model download --url https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/LoRAs/Wan22_relight/WanAnimate_relight_lora_fp16_resized_from_128_to_dynamic_22.safetensors --relative-path models/loras --filename WanAnimate_relight_lora_fp16_resized_from_128_to_dynamic_22.safetensors
-RUN comfy model download --url https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/Wan22Animate/Wan2_2-Animate-14B_fp8_scaled_e4m3fn_KJ_v2.safetensors --relative-path models/unet --filename Wan2_2-Animate-14B_fp8_scaled_e4m3fn_KJ_v2.safetensors
-RUN comfy model download --url https://huggingface.co/lightx2v/Wan2.2-Distill-Loras/resolve/main/wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors --relative-path models/loras --filename wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors
-RUN comfy model download --url https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Pusa/Wan22_PusaV1_lora_LOW_resized_dynamic_avg_rank_98_bf16.safetensors --relative-path models/loras --filename Wan22_PusaV1_lora_LOW_resized_dynamic_avg_rank_98_bf16.safetensors
-RUN comfy model download --url https://huggingface.co/alibaba-pai/Wan2.2-Fun-Reward-LoRAs/resolve/main/Wan2.2-Fun-A14B-InP-low-noise-HPS2.1.safetensors --relative-path models/loras --filename Wan2.2-Fun-A14B-InP-low-noise-HPS2.1.safetensors
-RUN comfy model download --url https://huggingface.co/VeryAladeen/Sec-4B/resolve/main/SeC-4B-fp16.safetensors?download=true --relative-path models/sams --filename Sec-4B-fp16.safetensors
-RUN comfy model download --url https://huggingface.co/Kijai/vitpose_comfy/resolve/ae68f4e542151cebec0995b8469c70b07b8c3df4/onnx/vitpose_h_wholebody_model.onnx --relative-path models/detection --filename vitpose_h_wholebody_model.onnx
-RUN comfy model download --url https://huggingface.co/Kijai/vitpose_comfy/resolve/ae68f4e542151cebec0995b8469c70b07b8c3df4/onnx/vitpose_h_wholebody_data.bin --relative-path models/detection --filename vitpose_h_wholebody_data.bin
-RUN comfy model download --url https://huggingface.co/Wan-AI/Wan2.2-Animate-14B/resolve/main/process_checkpoint/det/yolov10m.onnx --relative-path models/detection --filename yolov10m.onnx
-RUN comfy model download --url https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors --relative-path models/clip --filename CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors
-RUN comfy model download --url https://huggingface.co/Bingsu/adetailer/resolve/main/face_yolov8n.pt --relative-path models/ultralytics/bbox --filename face_yolov8n.pt
-RUN comfy model download --url https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors --relative-path models/text_encoders --filename umt5_xxl_fp8_e4m3fn_scaled.safetensors
-
-# copy all input data (like images or videos) into comfyui (uncomment and adjust if needed)
-# COPY input/ /comfyui/input/
 RUN comfy-node-install https://github.com/kijai/ComfyUI-KJNodes
 RUN comfy-node-install https://github.com/1038lab/ComfyUI-RMBG
 RUN comfy-node-install https://github.com/yolain/ComfyUI-Easy-Use
@@ -50,29 +32,13 @@ RUN comfy-node-install https://github.com/9nate-drake/Comfyui-SecNodes
 COPY modify_handler.py /tmp/modify_handler.py
 RUN python3 /tmp/modify_handler.py && rm /tmp/modify_handler.py
 
+# 添加模型链接脚本 (在容器启动时从 HuggingFace 缓存链接模型)
+COPY setup_model_links.sh /setup_model_links.sh
+RUN chmod +x /setup_model_links.sh
+
 # 添加 ComfyUI 额外模型路径配置
 COPY extra_model_paths.yaml /comfyui/extra_model_paths.yaml
 
-# 修复模型路径问题 - 使用目录链接
-# diffusion_models/wan/ -> unet/ (workflow 用 wan/ 前缀)
-RUN mkdir -p /comfyui/models/diffusion_models && \
-    ln -sf /comfyui/models/unet /comfyui/models/diffusion_models/wan
-
-# clip_vision/ -> clip/ (共享同一目录)
-RUN ln -sf /comfyui/models/clip /comfyui/models/clip_vision
-
-# CLIPLoader 需要 text_encoders 中的模型，链接整个目录内容到 clip
-RUN ln -sf /comfyui/models/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors /comfyui/models/clip/umt5_xxl_fp8_e4m3fn_scaled.safetensors
-
-# SeC 模型文件名修复 (下载的是 Sec，workflow 需要 SeC)
-RUN ln -sf /comfyui/models/sams/Sec-4B-fp16.safetensors /comfyui/models/sams/SeC-4B-fp16.safetensors
-
-# loras/wan/ 子目录 - 链接根目录的 lora 文件
-RUN mkdir -p /comfyui/models/loras/wan && \
-    for f in /comfyui/models/loras/*.safetensors; do \
-        [ -f "$f" ] && ln -sf "$f" /comfyui/models/loras/wan/$(basename "$f"); \
-    done
-
-# NSFW LoRA 模型
-RUN comfy model download --url https://huggingface.co/zzl1183635474/MyModel/resolve/main/bounce_test_LowNoise-000005.safetensors --relative-path models/loras/wan --filename bounce_test_LowNoise-000005.safetensors
-RUN comfy model download --url https://huggingface.co/rahul7star/wan2.2Lora/resolve/main/NSFW-22-L-e8.safetensors --relative-path models/loras/wan --filename NSFW-22-L-e8.safetensors
+# 模型通过 RunPod 的 Model URL 功能从 HuggingFace 仓库加载:
+# https://huggingface.co/zzl1183635474/v2v
+# 仓库目录结构已经和 ComfyUI 需要的一致，启动时由 setup_model_links.sh 链接

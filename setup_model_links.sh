@@ -1,6 +1,7 @@
 #!/bin/bash
 # 从 runpod cached models 创建符号链接到 ComfyUI models 目录
-# 这个脚本在容器启动时运行
+# HuggingFace 仓库: https://huggingface.co/zzl1183635474/v2v
+# 仓库目录结构已经和 ComfyUI 需要的一致
 
 set -e
 
@@ -37,28 +38,39 @@ if [ -z "${SNAPSHOT_DIR}" ]; then
 fi
 
 echo "Found snapshot directory: ${SNAPSHOT_DIR}"
+echo "Contents:"
+ls -la "${SNAPSHOT_DIR}"
 
 # ComfyUI models 目录
 COMFY_MODELS="/comfyui/models"
 
-# 创建所需的目录结构
-mkdir -p "${COMFY_MODELS}/vae"
-mkdir -p "${COMFY_MODELS}/loras/wan"
-mkdir -p "${COMFY_MODELS}/unet"
-mkdir -p "${COMFY_MODELS}/sams"
-mkdir -p "${COMFY_MODELS}/detection"
-mkdir -p "${COMFY_MODELS}/clip"
-mkdir -p "${COMFY_MODELS}/clip_vision"
-mkdir -p "${COMFY_MODELS}/ultralytics/bbox"
-mkdir -p "${COMFY_MODELS}/text_encoders"
-mkdir -p "${COMFY_MODELS}/diffusion_models/wan"
+# 直接链接仓库中的目录到 ComfyUI models 目录
+# 仓库结构已经和 ComfyUI 需要的一致
 
-# 创建符号链接的函数
-link_model() {
+link_dir() {
+    local src="$1"
+    local dst="$2"
+
+    if [ -d "${src}" ]; then
+        # 如果目标已存在，先删除
+        if [ -L "${dst}" ]; then
+            rm "${dst}"
+        elif [ -d "${dst}" ]; then
+            rm -rf "${dst}"
+        fi
+        ln -sf "${src}" "${dst}"
+        echo "Linked directory: ${dst} -> ${src}"
+    else
+        echo "WARNING: Source directory not found: ${src}"
+    fi
+}
+
+link_file() {
     local src="$1"
     local dst="$2"
 
     if [ -f "${src}" ]; then
+        mkdir -p "$(dirname "${dst}")"
         if [ -L "${dst}" ]; then
             rm "${dst}"
         fi
@@ -69,61 +81,29 @@ link_model() {
     fi
 }
 
-# 链接所有模型文件
-# VAE
-link_model "${SNAPSHOT_DIR}/vae/wan_2.1_vae.safetensors" "${COMFY_MODELS}/vae/wan_2.1_vae.safetensors"
-
-# LoRAs (根目录)
-link_model "${SNAPSHOT_DIR}/loras/WanAnimate_relight_lora_fp16_resized_from_128_to_dynamic_22.safetensors" "${COMFY_MODELS}/loras/WanAnimate_relight_lora_fp16_resized_from_128_to_dynamic_22.safetensors"
-link_model "${SNAPSHOT_DIR}/loras/wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors" "${COMFY_MODELS}/loras/wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors"
-link_model "${SNAPSHOT_DIR}/loras/Wan22_PusaV1_lora_LOW_resized_dynamic_avg_rank_98_bf16.safetensors" "${COMFY_MODELS}/loras/Wan22_PusaV1_lora_LOW_resized_dynamic_avg_rank_98_bf16.safetensors"
-link_model "${SNAPSHOT_DIR}/loras/Wan2.2-Fun-A14B-InP-low-noise-HPS2.1.safetensors" "${COMFY_MODELS}/loras/Wan2.2-Fun-A14B-InP-low-noise-HPS2.1.safetensors"
-
-# LoRAs (wan 子目录)
-link_model "${SNAPSHOT_DIR}/loras/wan/bounce_test_LowNoise-000005.safetensors" "${COMFY_MODELS}/loras/wan/bounce_test_LowNoise-000005.safetensors"
-link_model "${SNAPSHOT_DIR}/loras/wan/NSFW-22-L-e8.safetensors" "${COMFY_MODELS}/loras/wan/NSFW-22-L-e8.safetensors"
-
-# 同时链接到 loras 根目录（兼容不同的 workflow）
-link_model "${SNAPSHOT_DIR}/loras/wan/bounce_test_LowNoise-000005.safetensors" "${COMFY_MODELS}/loras/bounce_test_LowNoise-000005.safetensors"
-link_model "${SNAPSHOT_DIR}/loras/wan/NSFW-22-L-e8.safetensors" "${COMFY_MODELS}/loras/NSFW-22-L-e8.safetensors"
-
-# 同时在 wan/ 子目录创建其他 lora 的链接（workflow 可能使用 wan/ 前缀）
-link_model "${SNAPSHOT_DIR}/loras/WanAnimate_relight_lora_fp16_resized_from_128_to_dynamic_22.safetensors" "${COMFY_MODELS}/loras/wan/WanAnimate_relight_lora_fp16_resized_from_128_to_dynamic_22.safetensors"
-link_model "${SNAPSHOT_DIR}/loras/wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors" "${COMFY_MODELS}/loras/wan/wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors"
-link_model "${SNAPSHOT_DIR}/loras/Wan22_PusaV1_lora_LOW_resized_dynamic_avg_rank_98_bf16.safetensors" "${COMFY_MODELS}/loras/wan/Wan22_PusaV1_lora_LOW_resized_dynamic_avg_rank_98_bf16.safetensors"
-link_model "${SNAPSHOT_DIR}/loras/Wan2.2-Fun-A14B-InP-low-noise-HPS2.1.safetensors" "${COMFY_MODELS}/loras/wan/Wan2.2-Fun-A14B-InP-low-noise-HPS2.1.safetensors"
-
-# UNET
-link_model "${SNAPSHOT_DIR}/unet/Wan2_2-Animate-14B_fp8_scaled_e4m3fn_KJ_v2.safetensors" "${COMFY_MODELS}/unet/Wan2_2-Animate-14B_fp8_scaled_e4m3fn_KJ_v2.safetensors"
-
-# Diffusion Models (wan 子目录 - 同时链接)
-link_model "${SNAPSHOT_DIR}/unet/Wan2_2-Animate-14B_fp8_scaled_e4m3fn_KJ_v2.safetensors" "${COMFY_MODELS}/diffusion_models/wan/Wan2_2-Animate-14B_fp8_scaled_e4m3fn_KJ_v2.safetensors"
-
-# SAMs (注意大小写: SeC 不是 Sec)
-link_model "${SNAPSHOT_DIR}/sams/SeC-4B-fp16.safetensors" "${COMFY_MODELS}/sams/SeC-4B-fp16.safetensors"
-# 兼容旧文件名
-link_model "${SNAPSHOT_DIR}/sams/Sec-4B-fp16.safetensors" "${COMFY_MODELS}/sams/SeC-4B-fp16.safetensors"
-
-# Detection
-link_model "${SNAPSHOT_DIR}/detection/vitpose_h_wholebody_model.onnx" "${COMFY_MODELS}/detection/vitpose_h_wholebody_model.onnx"
-link_model "${SNAPSHOT_DIR}/detection/vitpose_h_wholebody_data.bin" "${COMFY_MODELS}/detection/vitpose_h_wholebody_data.bin"
-link_model "${SNAPSHOT_DIR}/detection/yolov10m.onnx" "${COMFY_MODELS}/detection/yolov10m.onnx"
-
-# CLIP
-link_model "${SNAPSHOT_DIR}/clip/CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors" "${COMFY_MODELS}/clip/CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors"
-
-# CLIP Vision (同时链接到 clip_vision 目录)
-link_model "${SNAPSHOT_DIR}/clip/CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors" "${COMFY_MODELS}/clip_vision/CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors"
-
-# Ultralytics
-link_model "${SNAPSHOT_DIR}/ultralytics/bbox/face_yolov8n.pt" "${COMFY_MODELS}/ultralytics/bbox/face_yolov8n.pt"
-
-# Text Encoders
-link_model "${SNAPSHOT_DIR}/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors" "${COMFY_MODELS}/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors"
+# 链接整个目录 (仓库结构已经正确)
+link_dir "${SNAPSHOT_DIR}/vae" "${COMFY_MODELS}/vae"
+link_dir "${SNAPSHOT_DIR}/loras" "${COMFY_MODELS}/loras"
+link_dir "${SNAPSHOT_DIR}/diffusion_models" "${COMFY_MODELS}/diffusion_models"
+link_dir "${SNAPSHOT_DIR}/sams" "${COMFY_MODELS}/sams"
+link_dir "${SNAPSHOT_DIR}/detection" "${COMFY_MODELS}/detection"
+link_dir "${SNAPSHOT_DIR}/clip" "${COMFY_MODELS}/clip"
+link_dir "${SNAPSHOT_DIR}/clip_vision" "${COMFY_MODELS}/clip_vision"
+link_dir "${SNAPSHOT_DIR}/text_encoders" "${COMFY_MODELS}/text_encoders"
+link_dir "${SNAPSHOT_DIR}/ultralytics" "${COMFY_MODELS}/ultralytics"
 
 # CLIPLoader 需要在 clip 目录找到 text encoder
-link_model "${SNAPSHOT_DIR}/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors" "${COMFY_MODELS}/clip/umt5_xxl_fp8_e4m3fn_scaled.safetensors"
+# 如果 text_encoders 目录存在，链接其中的文件到 clip 目录
+if [ -d "${SNAPSHOT_DIR}/text_encoders" ]; then
+    mkdir -p "${COMFY_MODELS}/clip"
+    for f in "${SNAPSHOT_DIR}/text_encoders"/*.safetensors; do
+        if [ -f "$f" ]; then
+            link_file "$f" "${COMFY_MODELS}/clip/$(basename "$f")"
+        fi
+    done
+fi
 
+echo ""
 echo "Model linking completed!"
 echo "Listing linked models:"
-find "${COMFY_MODELS}" -type l -exec ls -la {} \;
+find "${COMFY_MODELS}" -maxdepth 2 -type l -exec ls -la {} \; 2>/dev/null || true
