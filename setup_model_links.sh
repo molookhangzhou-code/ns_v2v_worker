@@ -95,10 +95,18 @@ link_dir "${SNAPSHOT_DIR}/ultralytics" "${COMFY_MODELS}/ultralytics"
 # CLIPLoader 需要在 clip 目录找到 text encoder
 # 如果 text_encoders 目录存在，链接其中的文件到 clip 目录
 if [ -d "${SNAPSHOT_DIR}/text_encoders" ]; then
-    mkdir -p "${COMFY_MODELS}/clip"
+    # 确保 clip 目录存在（可能是链接）
+    if [ -L "${COMFY_MODELS}/clip" ]; then
+        # 如果是链接，需要在实际目录中创建文件链接
+        CLIP_DIR=$(readlink -f "${COMFY_MODELS}/clip")
+    else
+        CLIP_DIR="${COMFY_MODELS}/clip"
+        mkdir -p "${CLIP_DIR}"
+    fi
+
     for f in "${SNAPSHOT_DIR}/text_encoders"/*.safetensors; do
         if [ -f "$f" ]; then
-            link_file "$f" "${COMFY_MODELS}/clip/$(basename "$f")"
+            link_file "$f" "${CLIP_DIR}/$(basename "$f")"
         fi
     done
 fi
@@ -106,4 +114,4 @@ fi
 echo ""
 echo "Model linking completed!"
 echo "Listing linked models:"
-find "${COMFY_MODELS}" -maxdepth 2 -type l -exec ls -la {} \; 2>/dev/null || true
+find "${COMFY_MODELS}" -maxdepth 3 -type l 2>/dev/null | head -20 || true
