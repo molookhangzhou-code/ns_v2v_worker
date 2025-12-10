@@ -1,0 +1,37 @@
+# ComfyUI 额外模型路径配置
+# 让 ComfyUI 在多个目录中搜索模型
+
+comfyui:
+    base_path: /comfyui/models
+    
+    # VAE 模型
+    vae: 
+        - vae
+    
+    # 主模型 (diffusion_models/wan/ 路径)
+    diffusion_models: 
+        - diffusion_models
+        - unet
+    
+    # LoRA 模型
+    loras:
+        - loras
+        - loras/wan
+    
+    # CLIP 模型
+    clip:
+        - clip
+        - text_encoders
+    
+    # CLIP Vision 模型  
+    clip_vision:
+        - clip_vision
+        - clip
+    
+    # SAM 模型
+    sams:
+        - sams
+    
+    # 检测模型
+    onnx:
+        - detection

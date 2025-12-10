@@ -50,6 +50,9 @@ RUN comfy-node-install https://github.com/9nate-drake/Comfyui-SecNodes
 COPY modify_handler.py /tmp/modify_handler.py
 RUN python3 /tmp/modify_handler.py && rm /tmp/modify_handler.py
 
+# 添加 ComfyUI 额外模型路径配置
+COPY extra_model_paths.yaml /comfyui/extra_model_paths.yaml
+
 # 修复模型路径问题 - 创建 wan/ 子目录的符号链接
 # workflow 中的模型路径带有 wan/ 前缀，需要创建对应的目录结构
 RUN mkdir -p /comfyui/models/diffusion_models/wan && \
