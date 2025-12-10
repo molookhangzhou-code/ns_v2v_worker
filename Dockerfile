@@ -35,8 +35,9 @@ RUN python3 /tmp/modify_handler.py && rm /tmp/modify_handler.py
 # 复制额外模型路径配置
 COPY extra_model_paths.yaml /comfyui/extra_model_paths.yaml
 
-# 启动脚本 - 创建 /runpod-volume/hf-models 链接指向 HuggingFace 缓存
-RUN echo '#!/bin/bash\n\
+# 在原 start.sh 前插入模型路径链接逻辑
+RUN sed -i '1a\
+# 链接 HuggingFace 缓存到 /runpod-volume/hf-models\n\
 CACHE_HUB="/runpod-volume/huggingface-cache/hub"\n\
 CACHE_BASE=$(find "${CACHE_HUB}" -maxdepth 1 -type d -name "models--*" 2>/dev/null | head -n 1)\n\
 if [ -n "${CACHE_BASE}" ]; then\n\
@@ -47,11 +48,7 @@ if [ -n "${CACHE_BASE}" ]; then\n\
         ls -la /runpod-volume/hf-models/\n\
     fi\n\
 fi\n\
-exec "$@"\n\
-' > /start.sh && chmod +x /start.sh
-
-ENTRYPOINT ["/start.sh"]
-CMD ["python", "-u", "/handler.py"]
+' /start.sh
 
 # 模型通过 RunPod 的 Model URL 功能从 HuggingFace 仓库加载:
 # https://huggingface.co/zzl1183635474/v2v
