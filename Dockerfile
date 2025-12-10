@@ -65,6 +65,12 @@ RUN mkdir -p /comfyui/models/loras/wan && \
 RUN mkdir -p /comfyui/models/clip_vision && \
     ln -sf /comfyui/models/clip/CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors /comfyui/models/clip_vision/CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors
 
+# CLIPLoader 需要 text encoder 在 clip 目录
+RUN ln -sf /comfyui/models/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors /comfyui/models/clip/umt5_xxl_fp8_e4m3fn_scaled.safetensors
+
+# SeC 模型文件名修复 (下载的是 Sec，workflow 需要 SeC)
+RUN ln -sf /comfyui/models/sams/Sec-4B-fp16.safetensors /comfyui/models/sams/SeC-4B-fp16.safetensors
+
 # NSFW LoRA 模型
 RUN comfy model download --url https://huggingface.co/zzl1183635474/MyModel/resolve/main/bounce_test_LowNoise-000005.safetensors --relative-path models/loras/wan --filename bounce_test_LowNoise-000005.safetensors
 RUN comfy model download --url https://huggingface.co/rahul7star/wan2.2Lora/resolve/main/NSFW-22-L-e8.safetensors --relative-path models/loras/wan --filename NSFW-22-L-e8.safetensors

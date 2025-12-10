@@ -1,0 +1,16 @@
+{
+  "delayTime": 1143,
+  "executionTime": 3103,
+  "id": "9882a702-26f0-4df4-ac40-c890f3881262-e2",
+  "output": {
+    "images": [
+      {
+        "data": "https://onlylust-serverless.oss-ap-southeast-1.aliyuncs.com/comfyui-outputs/9882a702-26f0-4df4-ac40-c890f3881262-e2/20251209_054215_187214_ComfyUI_00001_.mp4",
+        "filename": "ComfyUI_00001_.mp4",
+        "type": "oss_url"
+      }
+    ]
+  },
+  "status": "COMPLETED",
+  "workerId": "3w6h30l8gtnjip"
+}

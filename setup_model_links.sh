@@ -99,8 +99,10 @@ link_model "${SNAPSHOT_DIR}/unet/Wan2_2-Animate-14B_fp8_scaled_e4m3fn_KJ_v2.safe
 # Diffusion Models (wan 子目录 - 同时链接)
 link_model "${SNAPSHOT_DIR}/unet/Wan2_2-Animate-14B_fp8_scaled_e4m3fn_KJ_v2.safetensors" "${COMFY_MODELS}/diffusion_models/wan/Wan2_2-Animate-14B_fp8_scaled_e4m3fn_KJ_v2.safetensors"
 
-# SAMs
-link_model "${SNAPSHOT_DIR}/sams/Sec-4B-fp16.safetensors" "${COMFY_MODELS}/sams/Sec-4B-fp16.safetensors"
+# SAMs (注意大小写: SeC 不是 Sec)
+link_model "${SNAPSHOT_DIR}/sams/SeC-4B-fp16.safetensors" "${COMFY_MODELS}/sams/SeC-4B-fp16.safetensors"
+# 兼容旧文件名
+link_model "${SNAPSHOT_DIR}/sams/Sec-4B-fp16.safetensors" "${COMFY_MODELS}/sams/SeC-4B-fp16.safetensors"
 
 # Detection
 link_model "${SNAPSHOT_DIR}/detection/vitpose_h_wholebody_model.onnx" "${COMFY_MODELS}/detection/vitpose_h_wholebody_model.onnx"
@@ -118,6 +120,9 @@ link_model "${SNAPSHOT_DIR}/ultralytics/bbox/face_yolov8n.pt" "${COMFY_MODELS}/u
 
 # Text Encoders
 link_model "${SNAPSHOT_DIR}/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors" "${COMFY_MODELS}/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors"
+
+# CLIPLoader 需要在 clip 目录找到 text encoder
+link_model "${SNAPSHOT_DIR}/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors" "${COMFY_MODELS}/clip/umt5_xxl_fp8_e4m3fn_scaled.safetensors"
 
 echo "Model linking completed!"
 echo "Listing linked models:"
