@@ -32,13 +32,17 @@ RUN comfy-node-install https://github.com/9nate-drake/Comfyui-SecNodes
 COPY modify_handler.py /tmp/modify_handler.py
 RUN python3 /tmp/modify_handler.py && rm /tmp/modify_handler.py
 
-# 添加模型链接脚本 (在容器启动时从 HuggingFace 缓存链接模型)
+# 添加模型链接脚本
 COPY setup_model_links.sh /setup_model_links.sh
 RUN chmod +x /setup_model_links.sh
 
 # 添加 ComfyUI 额外模型路径配置
 COPY extra_model_paths.yaml /comfyui/extra_model_paths.yaml
 
+# 创建启动脚本，在 ComfyUI 启动前执行模型链接
+RUN echo '#!/bin/bash\n/setup_model_links.sh\nexec "$@"' > /start.sh && chmod +x /start.sh
+ENTRYPOINT ["/start.sh"]
+CMD ["python", "-u", "/handler.py"]
+
 # 模型通过 RunPod 的 Model URL 功能从 HuggingFace 仓库加载:
 # https://huggingface.co/zzl1183635474/v2v
-# 仓库目录结构已经和 ComfyUI 需要的一致，启动时由 setup_model_links.sh 链接
