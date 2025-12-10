@@ -88,7 +88,13 @@ link_dir "${SNAPSHOT_DIR}/diffusion_models" "${COMFY_MODELS}/diffusion_models"
 link_dir "${SNAPSHOT_DIR}/sams" "${COMFY_MODELS}/sams"
 link_dir "${SNAPSHOT_DIR}/detection" "${COMFY_MODELS}/detection"
 link_dir "${SNAPSHOT_DIR}/clip" "${COMFY_MODELS}/clip"
-link_dir "${SNAPSHOT_DIR}/clip_vision" "${COMFY_MODELS}/clip_vision"
+# clip_vision: 优先用 clip_vision 目录，没有则 fallback 到 clip
+if [ -d "${SNAPSHOT_DIR}/clip_vision" ]; then
+    link_dir "${SNAPSHOT_DIR}/clip_vision" "${COMFY_MODELS}/clip_vision"
+else
+    link_dir "${SNAPSHOT_DIR}/clip" "${COMFY_MODELS}/clip_vision"
+    echo "Note: clip_vision not found, using clip directory as fallback"
+fi
 link_dir "${SNAPSHOT_DIR}/text_encoders" "${COMFY_MODELS}/text_encoders"
 link_dir "${SNAPSHOT_DIR}/ultralytics" "${COMFY_MODELS}/ultralytics"
 
