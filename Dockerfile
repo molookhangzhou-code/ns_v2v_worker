@@ -53,26 +53,25 @@ RUN python3 /tmp/modify_handler.py && rm /tmp/modify_handler.py
 # 添加 ComfyUI 额外模型路径配置
 COPY extra_model_paths.yaml /comfyui/extra_model_paths.yaml
 
-# 修复模型路径问题 - 创建 wan/ 子目录的符号链接
-# workflow 中的模型路径带有 wan/ 前缀，需要创建对应的目录结构
-RUN mkdir -p /comfyui/models/diffusion_models/wan && \
-    ln -sf /comfyui/models/unet/Wan2_2-Animate-14B_fp8_scaled_e4m3fn_KJ_v2.safetensors /comfyui/models/diffusion_models/wan/Wan2_2-Animate-14B_fp8_scaled_e4m3fn_KJ_v2.safetensors
+# 修复模型路径问题 - 使用目录链接
+# diffusion_models/wan/ -> unet/ (workflow 用 wan/ 前缀)
+RUN mkdir -p /comfyui/models/diffusion_models && \
+    ln -sf /comfyui/models/unet /comfyui/models/diffusion_models/wan
 
-RUN mkdir -p /comfyui/models/loras/wan && \
-    ln -sf /comfyui/models/loras/WanAnimate_relight_lora_fp16_resized_from_128_to_dynamic_22.safetensors /comfyui/models/loras/wan/WanAnimate_relight_lora_fp16_resized_from_128_to_dynamic_22.safetensors && \
-    ln -sf /comfyui/models/loras/wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors /comfyui/models/loras/wan/wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors && \
-    ln -sf /comfyui/models/loras/Wan22_PusaV1_lora_LOW_resized_dynamic_avg_rank_98_bf16.safetensors /comfyui/models/loras/wan/Wan22_PusaV1_lora_LOW_resized_dynamic_avg_rank_98_bf16.safetensors && \
-    ln -sf /comfyui/models/loras/Wan2.2-Fun-A14B-InP-low-noise-HPS2.1.safetensors /comfyui/models/loras/wan/Wan2.2-Fun-A14B-InP-low-noise-HPS2.1.safetensors
+# clip_vision/ -> clip/ (共享同一目录)
+RUN ln -sf /comfyui/models/clip /comfyui/models/clip_vision
 
-# CLIP Vision 模型需要放到 clip_vision 目录
-RUN mkdir -p /comfyui/models/clip_vision && \
-    ln -sf /comfyui/models/clip/CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors /comfyui/models/clip_vision/CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors
-
-# CLIPLoader 需要 text encoder 在 clip 目录
+# CLIPLoader 需要 text_encoders 中的模型，链接整个目录内容到 clip
 RUN ln -sf /comfyui/models/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors /comfyui/models/clip/umt5_xxl_fp8_e4m3fn_scaled.safetensors
 
 # SeC 模型文件名修复 (下载的是 Sec，workflow 需要 SeC)
 RUN ln -sf /comfyui/models/sams/Sec-4B-fp16.safetensors /comfyui/models/sams/SeC-4B-fp16.safetensors
+
+# loras/wan/ 子目录 - 链接根目录的 lora 文件
+RUN mkdir -p /comfyui/models/loras/wan && \
+    for f in /comfyui/models/loras/*.safetensors; do \
+        [ -f "$f" ] && ln -sf "$f" /comfyui/models/loras/wan/$(basename "$f"); \
+    done
 
 # NSFW LoRA 模型
 RUN comfy model download --url https://huggingface.co/zzl1183635474/MyModel/resolve/main/bounce_test_LowNoise-000005.safetensors --relative-path models/loras/wan --filename bounce_test_LowNoise-000005.safetensors
