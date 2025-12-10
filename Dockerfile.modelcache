@@ -32,6 +32,8 @@ RUN comfy-node-install https://github.com/cubiq/ComfyUI_essentials
 RUN comfy-node-install https://github.com/chflame163/ComfyUI_LayerStyle
 RUN comfy-node-install https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
 RUN comfy-node-install https://github.com/kijai/ComfyUI-WanVideoWrapper
+# 安装 sageattention (ComfyUI-WanVideoWrapper 依赖)
+RUN uv pip install sageattention==1.0.6
 RUN comfy-node-install https://github.com/kijai/ComfyUI-WanAnimatePreprocess
 RUN comfy-node-install https://github.com/filliptm/ComfyUI_Fill-Nodes
 RUN comfy-node-install https://github.com/9nate-drake/Comfyui-SecNodes
