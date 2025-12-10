@@ -32,26 +32,18 @@ RUN comfy-node-install https://github.com/9nate-drake/Comfyui-SecNodes
 COPY modify_handler.py /tmp/modify_handler.py
 RUN python3 /tmp/modify_handler.py && rm /tmp/modify_handler.py
 
-# 添加 ComfyUI 额外模型路径配置
-COPY extra_model_paths.yaml /comfyui/extra_model_paths.yaml
-
-# 预创建模型目录结构，RunPod 启动时会自动链接 HuggingFace 仓库
-# 删除默认的空目录，这样 RunPod 可以创建符号链接
-RUN rm -rf /comfyui/models/clip_vision && mkdir -p /comfyui/models/clip_vision
-
-# 创建启动脚本 - 补充 RunPod 没有自动链接的目录
+# 启动脚本 - 直接把整个 models 目录指向 HuggingFace 缓存
 RUN echo '#!/bin/bash\n\
-# 等待 RunPod 完成模型链接\n\
-sleep 2\n\
-\n\
-# 如果 clip_vision 是空目录，链接到 clip 目录\n\
-if [ -d /comfyui/models/clip ] && [ -z "$(ls -A /comfyui/models/clip_vision 2>/dev/null)" ]; then\n\
-    rm -rf /comfyui/models/clip_vision\n\
-    ln -sf /comfyui/models/clip /comfyui/models/clip_vision\n\
-    echo "Linked clip_vision -> clip"\n\
+CACHE_HUB="/runpod-volume/huggingface-cache/hub"\n\
+CACHE_BASE=$(find "${CACHE_HUB}" -maxdepth 1 -type d -name "models--*" 2>/dev/null | head -n 1)\n\
+if [ -n "${CACHE_BASE}" ]; then\n\
+    SNAPSHOT_DIR=$(find "${CACHE_BASE}/snapshots" -maxdepth 1 -type d ! -name snapshots 2>/dev/null | head -n 1)\n\
+    if [ -n "${SNAPSHOT_DIR}" ]; then\n\
+        rm -rf /comfyui/models\n\
+        ln -sf "${SNAPSHOT_DIR}" /comfyui/models\n\
+        echo "Linked /comfyui/models -> ${SNAPSHOT_DIR}"\n\
+    fi\n\
 fi\n\
-\n\
-# 启动主程序\n\
 exec "$@"\n\
 ' > /start.sh && chmod +x /start.sh
 
