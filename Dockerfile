@@ -32,20 +32,27 @@ RUN comfy-node-install https://github.com/9nate-drake/Comfyui-SecNodes
 COPY modify_handler.py /tmp/modify_handler.py
 RUN python3 /tmp/modify_handler.py && rm /tmp/modify_handler.py
 
-# 复制额外模型路径配置
+# 覆盖 extra_model_paths.yaml
 COPY extra_model_paths.yaml /comfyui/extra_model_paths.yaml
 
 # 在原 start.sh 前插入模型路径链接逻辑
+# 把 HuggingFace 缓存的 snapshot 链接到 /runpod-volume/models
+# 并创建 clip_vision -> clip 的 symlink (HF LFS 去重导致 clip_vision 没下载)
 RUN sed -i '1a\
-# 链接 HuggingFace 缓存到 /runpod-volume/hf-models\n\
+# 链接 HuggingFace 缓存到 /runpod-volume/models\n\
 CACHE_HUB="/runpod-volume/huggingface-cache/hub"\n\
 CACHE_BASE=$(find "${CACHE_HUB}" -maxdepth 1 -type d -name "models--*" 2>/dev/null | head -n 1)\n\
 if [ -n "${CACHE_BASE}" ]; then\n\
     SNAPSHOT_DIR=$(find "${CACHE_BASE}/snapshots" -maxdepth 1 -type d ! -name snapshots 2>/dev/null | head -n 1)\n\
     if [ -n "${SNAPSHOT_DIR}" ]; then\n\
-        ln -sfn "${SNAPSHOT_DIR}" /runpod-volume/hf-models\n\
-        echo "Linked /runpod-volume/hf-models -> ${SNAPSHOT_DIR}"\n\
-        ls -la /runpod-volume/hf-models/\n\
+        ln -sfn "${SNAPSHOT_DIR}" /runpod-volume/models\n\
+        echo "Linked /runpod-volume/models -> ${SNAPSHOT_DIR}"\n\
+        # 创建 clip_vision 目录链接到 clip (HF去重导致clip_vision没下载)\n\
+        if [ ! -d "${SNAPSHOT_DIR}/clip_vision" ] && [ -d "${SNAPSHOT_DIR}/clip" ]; then\n\
+            ln -sfn "${SNAPSHOT_DIR}/clip" "${SNAPSHOT_DIR}/clip_vision"\n\
+            echo "Created clip_vision -> clip symlink"\n\
+        fi\n\
+        ls -la /runpod-volume/models/\n\
     fi\n\
 fi\n\
 ' /start.sh

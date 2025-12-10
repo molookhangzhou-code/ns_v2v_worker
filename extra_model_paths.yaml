@@ -1,13 +1,8 @@
 # ComfyUI 额外模型路径配置
-# 从 HuggingFace 缓存加载模型
+# HuggingFace 缓存映射到 /runpod-volume/models
 
-# 默认 ComfyUI 模型目录
-comfyui:
-    base_path: /comfyui/models
-
-# HuggingFace 缓存的模型 (运行时由启动脚本设置 HF_MODELS_PATH 环境变量)
-hf_cache:
-    base_path: /runpod-volume/hf-models
+hf_models:
+    base_path: /runpod-volume/models
 
     vae:
         - vae
@@ -22,8 +17,8 @@ hf_cache:
         - clip
         - text_encoders
 
+    # clip_vision 没有单独目录，用 clip 目录
     clip_vision:
-        - clip_vision
         - clip
 
     sams:
