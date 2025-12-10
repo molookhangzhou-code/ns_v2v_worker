@@ -9,6 +9,7 @@ import os
 import requests
 import time
 import base64
+import subprocess
 from pathlib import Path
 
 # RunPod 配置
@@ -48,6 +49,34 @@ def file_to_base64(file_path: Path) -> str:
         return base64.b64encode(f.read()).decode('utf-8')
 
 
+def get_video_dimensions(video_path: Path) -> tuple[int, int]:
+    """使用 ffprobe 获取视频尺寸"""
+    cmd = [
+        'ffprobe', '-v', 'error',
+        '-select_streams', 'v:0',
+        '-show_entries', 'stream=width,height',
+        '-of', 'json',
+        str(video_path)
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    data = json.loads(result.stdout)
+    stream = data['streams'][0]
+    return stream['width'], stream['height']
+
+
+def calculate_target_dimensions(width: int, height: int, target_short_side: int = 480) -> tuple[int, int]:
+    """计算目标尺寸，保持宽高比，短边为 target_short_side，对齐到 16"""
+    if width < height:
+        # 宽度是短边
+        new_width = (target_short_side // 16) * 16
+        new_height = ((height * target_short_side // width) // 16) * 16
+    else:
+        # 高度是短边
+        new_height = (target_short_side // 16) * 16
+        new_width = ((width * target_short_side // height) // 16) * 16
+    return new_width, new_height
+
+
 def build_request(video_path: Path, ref_image_path: Path, prompt: str = "一个少女正在跳舞"):
     """构建请求"""
     workflow = load_workflow()
@@ -65,11 +94,27 @@ def build_request(video_path: Path, ref_image_path: Path, prompt: str = "一个�
     # 设置较短的最大秒数用于测试
     workflow["165"]["inputs"]["value"] = 4  # 4秒
 
-    # 设置目标尺寸 (节点228控制短边尺寸)
-    workflow["228"]["inputs"]["value"] = 480
+    # 获取视频尺寸并计算目标尺寸
+    target_short_side = 480
+    workflow["228"]["inputs"]["value"] = target_short_side
 
-    # 不要修改 SimpleMath+ 节点 (181, 183, 166)，保留原始连接
-    # 它们会自动从视频信息节点获取宽高并计算
+    # 获取视频实际尺寸
+    video_width, video_height = get_video_dimensions(video_path)
+    target_width, target_height = calculate_target_dimensions(video_width, video_height, target_short_side)
+    print(f"  视频尺寸: {video_width}x{video_height} -> 目标尺寸: {target_width}x{target_height}")
+
+    # 将 SimpleMath+ 节点 181 和 183 替换为 easy int 节点
+    # 因为服务器的 SimpleMath+ 不支持参数 c
+    workflow["181"] = {
+        "inputs": {"value": target_width},
+        "class_type": "easy int",
+        "_meta": {"title": "Target Width"}
+    }
+    workflow["183"] = {
+        "inputs": {"value": target_height},
+        "class_type": "easy int",
+        "_meta": {"title": "Target Height"}
+    }
 
     # 修复输出节点：让节点283使用生成的视频(节点31)而不是原视频(节点240)
     if "283" in workflow:
