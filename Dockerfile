@@ -32,21 +32,19 @@ RUN comfy-node-install https://github.com/9nate-drake/Comfyui-SecNodes
 COPY modify_handler.py /tmp/modify_handler.py
 RUN python3 /tmp/modify_handler.py && rm /tmp/modify_handler.py
 
-# 启动脚本 - 链接 HuggingFace 缓存中的模型目录
+# 复制额外模型路径配置
+COPY extra_model_paths.yaml /comfyui/extra_model_paths.yaml
+
+# 启动脚本 - 创建 /runpod-volume/hf-models 链接指向 HuggingFace 缓存
 RUN echo '#!/bin/bash\n\
 CACHE_HUB="/runpod-volume/huggingface-cache/hub"\n\
 CACHE_BASE=$(find "${CACHE_HUB}" -maxdepth 1 -type d -name "models--*" 2>/dev/null | head -n 1)\n\
 if [ -n "${CACHE_BASE}" ]; then\n\
     SNAPSHOT_DIR=$(find "${CACHE_BASE}/snapshots" -maxdepth 1 -type d ! -name snapshots 2>/dev/null | head -n 1)\n\
     if [ -n "${SNAPSHOT_DIR}" ]; then\n\
-        echo "Found models at: ${SNAPSHOT_DIR}"\n\
-        for dir in clip clip_vision detection diffusion_models loras sams text_encoders ultralytics vae; do\n\
-            if [ -d "${SNAPSHOT_DIR}/${dir}" ]; then\n\
-                rm -rf "/comfyui/models/${dir}"\n\
-                ln -sf "${SNAPSHOT_DIR}/${dir}" "/comfyui/models/${dir}"\n\
-                echo "Linked: ${dir}"\n\
-            fi\n\
-        done\n\
+        ln -sfn "${SNAPSHOT_DIR}" /runpod-volume/hf-models\n\
+        echo "Linked /runpod-volume/hf-models -> ${SNAPSHOT_DIR}"\n\
+        ls -la /runpod-volume/hf-models/\n\
     fi\n\
 fi\n\
 exec "$@"\n\
