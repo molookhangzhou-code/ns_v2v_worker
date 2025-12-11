@@ -70,14 +70,8 @@ def get_oss_client():
         return None
 
     try:
-        # 从环境变量中加载凭证信息 (支持 ALIBABA_CLOUD_ACCESS_KEY_ID/SECRET 或 OSS_ACCESS_KEY_ID/SECRET)
-        # 先检查是否设置了 OSS_ 前缀的环境变量，如果有则设置为 ALIBABA_CLOUD_ 前缀
-        oss_key_id = os.environ.get("OSS_ACCESS_KEY_ID", "")
-        oss_key_secret = os.environ.get("OSS_ACCESS_KEY_SECRET", "")
-        if oss_key_id and oss_key_secret:
-            os.environ["ALIBABA_CLOUD_ACCESS_KEY_ID"] = oss_key_id
-            os.environ["ALIBABA_CLOUD_ACCESS_KEY_SECRET"] = oss_key_secret
-
+        # alibabacloud_oss_v2 SDK 使用 OSS_ACCESS_KEY_ID / OSS_ACCESS_KEY_SECRET 环境变量
+        # 不需要额外设置，直接使用 EnvironmentVariableCredentialsProvider
         credentials_provider = oss.credentials.EnvironmentVariableCredentialsProvider()
 
         # 加载 SDK 默认配置
