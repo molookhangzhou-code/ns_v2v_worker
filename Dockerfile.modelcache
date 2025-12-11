@@ -12,10 +12,11 @@ ENV DEBIAN_FRONTEND=noninteractive \
     TRITON_CACHE_DIR=/opt/triton-cache \
     TORCHINDUCTOR_CACHE_DIR=/opt/inductor-cache
 
-# 安装 C 编译器 (Triton 编译 CUDA kernel 需要)
+# 安装 C 编译器和开发库 (Triton 编译 CUDA kernel 需要)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
+    python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # install custom nodes into comfyui
