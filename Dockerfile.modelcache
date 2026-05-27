@@ -35,6 +35,7 @@ RUN comfy-node-install https://github.com/yolain/ComfyUI-Easy-Use
 RUN comfy-node-install https://github.com/kijai/ComfyUI-GIMM-VFI
 RUN comfy-node-install https://github.com/Stability-AI/stability-ComfyUI-nodes
 RUN comfy-node-install https://github.com/WASasquatch/was-node-suite-comfyui
+RUN comfy-node-install https://github.com/heshengtao/comfyui_LLM_party
 RUN comfy-node-install https://github.com/cubiq/ComfyUI_essentials
 RUN comfy-node-install https://github.com/chflame163/ComfyUI_LayerStyle
 RUN comfy-node-install https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
